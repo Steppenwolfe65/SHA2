@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Common">
+      <UniqueIdentifier>{9132d570-a6ad-4bf1-8e27-b2a72e355aac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Digest">
+      <UniqueIdentifier>{309bcff8-5ae7-45c0-b49a-70aa984e2174}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Digest\Support">
+      <UniqueIdentifier>{5fb88b15-78d8-4cf1-8ab7-77142346aeff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Digest">
+      <UniqueIdentifier>{1303da79-8703-403c-a016-f6a9794ecb65}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\SHA2\Common.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\Config.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\CpuDetect.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\CryptoDigestException.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\Intrinsics.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\IntUtils.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\MacParams.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\ParallelUtils.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\SHA256.h">
+      <Filter>Header Files\Digest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\SHA.h">
+      <Filter>Header Files\Digest\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\SHA512.h">
+      <Filter>Header Files\Digest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\IDigest.h">
+      <Filter>Header Files\Digest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\Digests.h">
+      <Filter>Header Files\Digest\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\UInt256.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\UInt128.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\SHA256Compress.h">
+      <Filter>Header Files\Digest\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\SHA512Compress.h">
+      <Filter>Header Files\Digest\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\SHA2Params.h">
+      <Filter>Header Files\Digest\Support</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\SHA2\SHA256.cpp">
+      <Filter>Source Files\Digest</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\SHA512.cpp">
+      <Filter>Source Files\Digest</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
