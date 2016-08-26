@@ -11,7 +11,7 @@ namespace TestSHA2
 		try
 		{
 			Initialize();
-			//CompareIntrinsics();
+			CompareIntrinsics();
 
 			SHA2::SHA256* sha256 = new SHA2::SHA256();
 			CompareSHA(sha256, m_shaMessage[0], m_shaExpected256[0]);

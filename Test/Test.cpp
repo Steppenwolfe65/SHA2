@@ -96,6 +96,7 @@ int main()
 {
 	ConsoleUtils::SizeConsole();
 	PrintTitle();
+	//RunTest(new SHA2Test());
 
 	try
 	{

@@ -54,9 +54,6 @@
     <ClInclude Include="..\..\SHA2\SHA256.h">
       <Filter>Header Files\Digest</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SHA2\SHA.h">
-      <Filter>Header Files\Digest\Support</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\SHA2\SHA512.h">
       <Filter>Header Files\Digest</Filter>
     </ClInclude>
@@ -80,6 +77,9 @@
     </ClInclude>
     <ClInclude Include="..\..\SHA2\SHA2Params.h">
       <Filter>Header Files\Digest\Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\ULong256.h">
+      <Filter>Header Files\Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

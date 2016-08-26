@@ -128,7 +128,6 @@
     <ClInclude Include="..\..\SHA2\IntUtils.h" />
     <ClInclude Include="..\..\SHA2\MacParams.h" />
     <ClInclude Include="..\..\SHA2\ParallelUtils.h" />
-    <ClInclude Include="..\..\SHA2\SHA.h" />
     <ClInclude Include="..\..\SHA2\SHA256.h" />
     <ClInclude Include="..\..\SHA2\SHA256Compress.h" />
     <ClInclude Include="..\..\SHA2\SHA2Params.h" />
@@ -136,6 +135,7 @@
     <ClInclude Include="..\..\SHA2\SHA512Compress.h" />
     <ClInclude Include="..\..\SHA2\UInt128.h" />
     <ClInclude Include="..\..\SHA2\UInt256.h" />
+    <ClInclude Include="..\..\SHA2\ULong256.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\SHA2\SHA256.cpp" />

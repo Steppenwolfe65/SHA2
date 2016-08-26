@@ -26,21 +26,13 @@ namespace SHA2
 		}
 
 		/// <summary>
-		/// 
-		/// </summary>
-		UInt256(__m256i Input)
-		{
-			Register = Input;
-		}
-
-		/// <summary>
 		/// Initialize with an __m256i integer
 		/// </summary>
 		///
 		/// <param name="Register">The register to copy</param>
-		UInt256(__m256i &Register)
+		UInt256(__m256i Input)
 		{
-			Register = Register;
+			Register = Input;
 		}
 
 		/// <summary>

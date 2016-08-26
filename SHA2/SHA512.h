@@ -246,6 +246,8 @@ namespace SHA2
 		{
 			if (m_isParallel)
 			{
+			
+				DetectCpu();
 				// defaults to tree depth(1), parallel degree(4), and subtree(8) branch size
 				m_treeParams = { (uint8_t)DIGEST_SIZE, 0, 1, (uint8_t)BLOCK_SIZE, (uint8_t)PRL_DEGREE, (uint8_t)ITLANE_SIZE };
 			}
@@ -303,6 +305,7 @@ namespace SHA2
 				if (Params.SubTreeLength() % 2 != 0 || Params.SubTreeLength() < 2 || Params.SubTreeLength() > m_minParallel / BLOCK_SIZE)
 					throw CryptoDigestException("SHA512:Ctor", "SubTreeLength must be divisible by two, and no more than minimum parallel divide by block size.");
 #endif
+				DetectCpu();
 				m_treeParams = { (uint8_t)DIGEST_SIZE, 0, (uint8_t)(Params.TreeDepth() == 2 ? 2 : 1), (uint8_t)BLOCK_SIZE, Params.ParallelDegree(), Params.SubTreeLength() };
 			}
 			else

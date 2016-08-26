@@ -44,6 +44,7 @@ namespace SHA2
 				size_t prcLen = Length - (Length % m_minParallel);
 
 				// process large blocks
+				//for (size_t i = 0; i < m_treeParams.ParallelDegree(); ++i)
 				ParallelUtils::ParallelFor(0, m_treeParams.ParallelDegree(), [this, &Input, InOffset, prcLen, stateOffset](size_t i)
 				{
 					ProcessLeaf(Input, InOffset + (i * ITL_BLKSIZE), m_State, i * stateOffset, prcLen);
@@ -451,11 +452,18 @@ namespace SHA2
 	{
 		if (m_isParallel)
 		{
-			// 4 lanes in reverse order for future simd compatability
-			SHA512Compress::Compress128(Input, InOffset, State, StateOffset + 3);
-			SHA512Compress::Compress128(Input, InOffset + BLOCK_SIZE, State, StateOffset + 2);
-			SHA512Compress::Compress128(Input, InOffset + BLOCK_SIZE * 2, State, StateOffset + 1);
-			SHA512Compress::Compress128(Input, InOffset + BLOCK_SIZE * 3, State, StateOffset);
+			if (m_hasAvx)
+			{
+				SHA512Compress::Compress512(Input, InOffset, State, StateOffset);
+			}
+			else
+			{
+				// 4 lanes in reverse order for future simd compatability
+				SHA512Compress::Compress128(Input, InOffset, State, StateOffset + 3);
+				SHA512Compress::Compress128(Input, InOffset + BLOCK_SIZE, State, StateOffset + 2);
+				SHA512Compress::Compress128(Input, InOffset + BLOCK_SIZE * 2, State, StateOffset + 1);
+				SHA512Compress::Compress128(Input, InOffset + BLOCK_SIZE * 3, State, StateOffset);
+			}
 		}
 		else
 		{

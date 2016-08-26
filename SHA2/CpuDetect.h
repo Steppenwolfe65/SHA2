@@ -432,6 +432,24 @@ namespace SHA2
 				return FeatureSet::NONE;
 		}
 
+		/*int CheckForIntelShaExtensions() 
+		{
+			int a, b, c, d;
+
+			// Look for CPUID.7.0.EBX[29]
+			// EAX = 7, ECX = 0
+			a = 7;
+			c = 0;
+
+			asm volatile ("cpuid"
+				:"=a"(a), "=b"(b), "=c"(c), "=d"(d)
+				: "a"(a), "c"(c)
+				);
+
+			// Intel® SHA Extensions feature bit is EBX[29]
+			return ((b >> 29) & 1);
+		}*/
+
 	private:
 #if defined(_MSC_VER) && _MSC_FULL_VER >= 160040219
 		bool HasAvxSupport()
