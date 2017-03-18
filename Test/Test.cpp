@@ -96,7 +96,6 @@ int main()
 {
 	ConsoleUtils::SizeConsole();
 	PrintTitle();
-	//RunTest(new SHA2Test());
 
 	try
 	{
@@ -113,36 +112,15 @@ int main()
 		}
 		ConsoleUtils::WriteLine("");
 
-		if (CanTest("Press 'Y' then Enter to run Parallelized Tree Hashing Tests using 4 Threads, any other key to cancel: "))
+		if (CanTest("Press 'Y' then Enter to run Message Digest Speed Tests, any other key to cancel: "))
 		{
-			RunTest(new DigestSpeedTest(0));
+			RunTest(new DigestSpeedTest());
 		}
 		else
 		{
 			ConsoleUtils::WriteLine("Speed test was Cancelled..");
 		}
 		ConsoleUtils::WriteLine("");
-
-		if (CanTest("Press 'Y' then Enter to run Parallelized Tree Hashing Tests using 8 Threads, any other key to cancel: "))
-		{
-			RunTest(new DigestSpeedTest(1));
-		}
-		else
-		{
-			ConsoleUtils::WriteLine("Extended Speed test was Cancelled..");
-		}
-		ConsoleUtils::WriteLine("");
-
-		if (CanTest("Press 'Y' then Enter to run speed tests using the standard sequential mode, any other key to cancel: "))
-		{
-			RunTest(new DigestSpeedTest(2));
-		}
-		else
-		{
-			ConsoleUtils::WriteLine("Custom Parallel Degree test was Cancelled..");
-		}
-		ConsoleUtils::WriteLine("");
-
 
 		PrintHeader("Completed! Press any key to close..", "");
 		GetResponse();

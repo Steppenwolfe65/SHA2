@@ -25,49 +25,103 @@
     <Filter Include="Source Files\Digest">
       <UniqueIdentifier>{1303da79-8703-403c-a016-f6a9794ecb65}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Common">
+      <UniqueIdentifier>{d1e3aee4-71ac-4fe9-95c3-583256d57620}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utility">
+      <UniqueIdentifier>{ff39cdc6-f1c2-407d-a3dc-4cf240048f4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Enumeration">
+      <UniqueIdentifier>{49486ece-bc73-4b86-b7c1-2db53a9732b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Exception">
+      <UniqueIdentifier>{5341097d-de2d-463a-9854-2181df63a4a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Helper">
+      <UniqueIdentifier>{06168fdc-b4ba-48e4-98f6-e9bcb0dad783}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Helper">
+      <UniqueIdentifier>{20240ab1-943c-43c6-899f-ec6832ddeda0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\IO">
+      <UniqueIdentifier>{724bc34c-3743-4ff7-aae4-96f7edd8e756}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Provider">
+      <UniqueIdentifier>{2bd636ad-825b-4490-bbe2-4aeded3fb529}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Prng">
+      <UniqueIdentifier>{919144c3-7366-4e66-a5b6-52fddd17cea6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utility">
+      <UniqueIdentifier>{dbe67786-70f9-4b44-a4a9-64100d97af3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IO">
+      <UniqueIdentifier>{ae8dacec-4615-4dea-aeb1-3295adc139b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Prng">
+      <UniqueIdentifier>{633fbbcf-c921-46b8-960f-4784c6adb80f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Provider">
+      <UniqueIdentifier>{99afa449-d4f2-4b11-9a16-1f5fee3e737e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\SHA2\Common.h">
+    <ClInclude Include="..\..\SHA2\IDigest.h">
+      <Filter>Header Files\Digest</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\CexConfig.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SHA2\Config.h">
+    <ClInclude Include="..\..\SHA2\CexDomain.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SHA2\CpuDetect.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SHA2\CryptoDigestException.h">
-      <Filter>Header Files\Common</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\SHA2\Intrinsics.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SHA2\IntUtils.h">
+    <ClInclude Include="..\..\SHA2\ParallelOptions.h">
       <Filter>Header Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SHA2\MacParams.h">
-      <Filter>Header Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SHA2\ParallelUtils.h">
-      <Filter>Header Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SHA2\SHA256.h">
-      <Filter>Header Files\Digest</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SHA2\SHA512.h">
-      <Filter>Header Files\Digest</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SHA2\IDigest.h">
-      <Filter>Header Files\Digest</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SHA2\Digests.h">
-      <Filter>Header Files\Digest\Support</Filter>
+      <Filter>Header Files\Enumeration</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SHA2\UInt256.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\..\SHA2\Providers.h">
+      <Filter>Header Files\Enumeration</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SHA2\UInt128.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\..\SHA2\SimdProfiles.h">
+      <Filter>Header Files\Enumeration</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\CryptoDigestException.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\CryptoProcessingException.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\CryptoRandomException.h">
+      <Filter>Header Files\Exception</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\DigestFromName.h">
+      <Filter>Header Files\Helper</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\BitConverter.h">
+      <Filter>Header Files\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\CSP.h">
+      <Filter>Header Files\Provider</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\SecureRandom.h">
+      <Filter>Header Files\Prng</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\ArrayUtils.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\IntUtils.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\SHA2\ParallelUtils.h">
+      <Filter>Header Files\Utility</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SHA2\SHA256Compress.h">
       <Filter>Header Files\Digest\Support</Filter>
@@ -75,14 +129,41 @@
     <ClInclude Include="..\..\SHA2\SHA512Compress.h">
       <Filter>Header Files\Digest\Support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SHA2\SHA2Params.h">
-      <Filter>Header Files\Digest\Support</Filter>
+    <ClInclude Include="..\..\SHA2\SHA256.h">
+      <Filter>Header Files\Digest</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\SHA2\ULong256.h">
-      <Filter>Header Files\Common</Filter>
+    <ClInclude Include="..\..\SHA2\SHA512.h">
+      <Filter>Header Files\Digest</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\SHA2\CpuDetect.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\ParallelOptions.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\DigestFromName.cpp">
+      <Filter>Source Files\Helper</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\BitConverter.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\SecureRandom.cpp">
+      <Filter>Source Files\Prng</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\CSP.cpp">
+      <Filter>Source Files\Provider</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\ArrayUtils.cpp">
+      <Filter>Source Files\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\IntUtils.cpp">
+      <Filter>Source Files\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\SHA2\ParallelUtils.cpp">
+      <Filter>Source Files\Utility</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\SHA2\SHA256.cpp">
       <Filter>Source Files\Digest</Filter>
     </ClCompile>

@@ -2,59 +2,52 @@
 #include "HexConverter.h"
 #include "../SHA2/SHA256.h"
 #include "../SHA2/SHA512.h"
-#include "../SHA2/MacParams.h"
+#include "../SHA2/SecureRandom.h"
 
 namespace TestSHA2
 {
+	using CEX::Digest::SHA256;
+	using CEX::Digest::SHA512;
+
 	std::string SHA2Test::Run()
 	{
 		try
 		{
 			Initialize();
-			CompareIntrinsics();
 
-			SHA2::SHA256* sha256 = new SHA2::SHA256();
-			CompareSHA(sha256, m_shaMessage[0], m_shaExpected256[0]);
-			CompareSHA(sha256, m_shaMessage[1], m_shaExpected256[1]);
-			CompareSHA(sha256, m_shaMessage[2], m_shaExpected256[2]);
-			CompareSHA(sha256, m_shaMessage[3], m_shaExpected256[3]);
+			SHA256* sha256 = new SHA256();
+			CompareVector(sha256, m_shaMessage[0], m_shaExpected256[0]);
+			CompareVector(sha256, m_shaMessage[1], m_shaExpected256[1]);
+			CompareVector(sha256, m_shaMessage[2], m_shaExpected256[2]);
+			CompareVector(sha256, m_shaMessage[3], m_shaExpected256[3]);
 			delete sha256;
 			OnProgress("Sha2Test: Passed SHA-2 256 bit digest vector tests..");
 
-			SHA2::SHA512* sha512 = new SHA2::SHA512();
-			CompareSHA(sha512, m_shaMessage[0], m_shaExpected512[0]);
-			CompareSHA(sha512, m_shaMessage[1], m_shaExpected512[1]);
-			CompareSHA(sha512, m_shaMessage[2], m_shaExpected512[2]);
-			CompareSHA(sha512, m_shaMessage[3], m_shaExpected512[3]);
+			SHA512* sha512 = new SHA512();
+			CompareVector(sha512, m_shaMessage[0], m_shaExpected512[0]);
+			CompareVector(sha512, m_shaMessage[1], m_shaExpected512[1]);
+			CompareVector(sha512, m_shaMessage[2], m_shaExpected512[2]);
+			CompareVector(sha512, m_shaMessage[3], m_shaExpected512[3]);
 			delete sha512;
 			OnProgress("Sha2Test: Passed SHA-2 512 bit digest vector tests..");
 
-			CompareMac256(m_macKeys[0], m_macInput[0], m_mac256[0]);
-			CompareMac256(m_macKeys[1], m_macInput[1], m_mac256[1]);
-			CompareMac256(m_macKeys[2], m_macInput[2], m_mac256[2]);
-			CompareMac256(m_macKeys[3], m_macInput[3], m_mac256[3]);
-			CompareMac256(m_macKeys[4], m_macInput[4], m_mac256[4]);
-			CompareMac256(m_macKeys[5], m_macInput[5], m_mac256[5]);
-			CompareMac256(m_macKeys[6], m_macInput[6], m_mac256[6]);
-			OnProgress("HMACTest: Passed SHA-2 256 bit known answer vector tests..");
 
-			CompareMac512(m_macKeys[0], m_macInput[0], m_mac512[0]);
-			CompareMac512(m_macKeys[1], m_macInput[1], m_mac512[1]);
-			CompareMac512(m_macKeys[2], m_macInput[2], m_mac512[2]);
-			CompareMac512(m_macKeys[3], m_macInput[3], m_mac512[3]);
-			CompareMac512(m_macKeys[4], m_macInput[4], m_mac512[4]);
-			CompareMac512(m_macKeys[5], m_macInput[5], m_mac512[5]);
-			CompareMac512(m_macKeys[6], m_macInput[6], m_mac512[6]);
-			OnProgress("HMACTest: Passed SHA-2 512 bit known answer vector tests..");/**/
+			/*SHA256* sks2 = new SHA256(true);
+			SHA2Params sp1;
+			SHA256* sks3 = new SHA256(sp1);
+			CompareParallel(sks2, sks3);
+			delete sks2;
+			delete sks3;
+			OnProgress("Passed SHA2-256 parallelization tests..");
 
-			CompareHkdf(42, m_hkdfSalt[0], m_hkdfIkm[0], m_hkdfInfo[0], m_hkdfOutput[0]);
-			CompareHkdf(82, m_hkdfSalt[1], m_hkdfIkm[1], m_hkdfInfo[1], m_hkdfOutput[1]);
-			OnProgress("HKDFTest: Passed SHA256 bit vectors tests..");
+			SHA512* skm2 = new SHA512(true);
+			SHA2Params sp2;
+			SHA512* skm3 = new SHA512(sp2);
+			CompareParallel(skm2, skm3);
+			delete skm2;
+			delete skm3;
+			OnProgress("Passed SHA2-512 parallelization tests..");*/
 
-			std::vector<byte> salt0;
-			std::vector<byte> info0;
-			CompareHkdf(42, salt0, m_hkdfIkm[2], info0, m_hkdfOutput[2]);
-			OnProgress("HKDFTest: Passed parameters tests..");
 
 			return SUCCESS;
 		}
@@ -68,114 +61,61 @@ namespace TestSHA2
 		}
 	}
 
-	void SHA2Test::CompareHkdf(int Size, std::vector<byte> &Salt, std::vector<byte> &Key, std::vector<byte> &Info, std::vector<byte> &Output)
+	void SHA2Test::CompareParallel(IDigest* Dgt1, IDigest* Dgt2)
 	{
-		std::vector<byte> output(Size, 0);
-		SHA2::SHA256 eng;
-		eng.Generate(SHA2::MacParams(Key, Salt, Info), output);
+		std::vector<byte> hash1(Dgt1->DigestSize(), 0);
+		std::vector<byte> hash2(Dgt1->DigestSize(), 0);
+		const size_t PRLBLK = Dgt1->ParallelBlockSize();
+		const size_t PRLMIN = Dgt1->ParallelProfile().ParallelMinimumSize();
+		CEX::Prng::SecureRandom rnd;
+		Dgt1->ParallelProfile().ParallelBlockSize() = PRLBLK;
+		Dgt2->ParallelProfile().ParallelBlockSize() = PRLMIN;
 
-		if (output != Output)
-			throw std::string("HKDF: Values are not equal!");
-	}
-
-	void SHA2Test::CompareIntrinsics()
-	{
-		// just for debug
+		for (size_t i = 0; i < 100; ++i)
 		{
-			std::vector<byte> hash(64, 0);
-			std::vector<byte> msg(2048, 0);
-			for (size_t i = 0; i < 256; ++i)
-				msg[i] = i;
+			uint32_t prlSze = rnd.NextUInt32(PRLMIN * 2, PRLMIN * 8);
+			prlSze -= (prlSze % PRLMIN);
+			// set to parallel, but block will be too small.. processed with sequential fallback
+			std::vector<byte> input(prlSze);
+			rnd.GetBytes(input);
 
-			for (size_t i = 1; i < 8; ++i)
-				memcpy(&msg[i * 256], &msg[0], 256);
+			Dgt1->Update(input, 0, input.size());
+			Dgt1->Finalize(hash1, 0);
+			Dgt1->Reset();
 
-			SHA2::SHA512 dgt(true);
-			dgt.BlockUpdate(msg, 0, msg.size());
-			dgt.DoFinal(hash, 0);
+			// this will run in parallel
+			Dgt2->Update(input, 0, input.size());
+			Dgt2->Finalize(hash2, 0);
+			Dgt2->Reset();
 
-			std::string shsh;
-			HexConverter::ToString(hash, shsh);
-		}
+			if (hash1 != hash2)
+				throw std::exception("SKein Vector: Expected hash is not equal!");
 
-		{
-			std::vector<byte> hash(32, 0);
-			std::vector<byte> msg(2048, 0);
-			for (size_t i = 0; i < 256; ++i)
-				msg[i] = i;
+			// test partial block-size and compute method
+			input.resize(input.size() + rnd.NextUInt32(1, 200), (byte)199);
+			Dgt1->Compute(input, hash1);
 
-			for (size_t i = 1; i < 8; ++i)
-				memcpy(&msg[i * 256], &msg[0], 256);
+			Dgt2->Update(input, 0, input.size());
+			Dgt2->Finalize(hash2, 0);
+			Dgt2->Reset();
 
-			SHA2::SHA256 dgt(true);
-			dgt.BlockUpdate(msg, 0, msg.size());
-			dgt.DoFinal(hash, 0);
-
-			std::string shsh;
-			HexConverter::ToString(hash, shsh);
+			if (hash1 != hash2)
+				throw std::exception("SKein Vector: Expected hash is not equal!");
 		}
 	}
 
-	void SHA2Test::CompareMac256(std::vector<byte> &Key, std::vector<byte> &Input, std::vector<byte> &Expected)
-	{
-		std::vector<byte> hash(32, 0);
-		SHA2::SHA256 eng;
-
-		eng.LoadMacKey(SHA2::MacParams(Key));
-		eng.ComputeHash(Input, hash);
-
-		// truncated output, test case #5
-		if (Expected.size() != 32)
-		{
-			std::vector<byte> tmph;
-			tmph.resize(Expected.size(), 0);
-			memcpy(&tmph[0], &hash[0], Expected.size());
-
-			if (Expected != tmph)
-				throw std::string("SHA2Test: HMAC return code is not equal!");
-		}
-		else
-		{
-			if (Expected != hash) //186,120..
-				throw std::string("SHA2Test: HMAC return code is not equal!");
-		}
-	}
-
-	void SHA2Test::CompareMac512(std::vector<byte> &Key, std::vector<byte> &Input, std::vector<byte> &Expected)
-	{
-		std::vector<byte> hash(64, 0);
-		SHA2::SHA512 eng;
-
-		eng.LoadMacKey(SHA2::MacParams(Key));
-		eng.ComputeHash(Input, hash);
-
-		if (Expected.size() != 64)
-		{
-			std::vector<byte> tmph;
-			tmph.resize(Expected.size(), 0);
-			memcpy(&tmph[0], &hash[0], Expected.size());
-
-			if (Expected != tmph)
-				throw std::string("SHA2Test: HMAC return code is not equal!");
-		}
-		else
-		{
-			if (Expected != hash)
-				throw std::string("SHA2Test: HMAC return code is not equal!");
-		}
-	}
-
-	void SHA2Test::CompareSHA(SHA2::IDigest *Digest, std::vector<byte> Input, std::vector<byte> Expected)
+	void SHA2Test::CompareVector(IDigest *Digest, std::vector<byte> Input, std::vector<byte> Expected)
 	{
 		std::vector<byte> hash(Digest->DigestSize(), 0);
 
-		Digest->BlockUpdate(Input, 0, Input.size());
-		Digest->DoFinal(hash, 0);
+		Digest->Update(Input, 0, Input.size());
+		Digest->Finalize(hash, 0);
+		Digest->Reset();
 
 		if (Expected != hash)
 			throw std::string("SHA2: Expected hash is not equal!");
 
-		Digest->ComputeHash(Input, hash);
+		Digest->Compute(Input, hash);
 		if (Expected != hash)
 			throw std::string("SHA2: Expected hash is not equal!");
 	}

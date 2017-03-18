@@ -1,13 +1,15 @@
-#ifndef _BLAKE2TEST_DIGESTSPEEDTEST_H
-#define _BLAKE2TEST_DIGESTSPEEDTEST_H
+#ifndef _SHA2TEST_DIGESTSPEEDTEST_H
+#define _SHA2TEST_DIGESTSPEEDTEST_H
 
 #include "ITest.h"
-#include <sstream>
+#include "../SHA2/Digests.h"
 
 namespace TestSHA2
 {
+	using CEX::Enumeration::Digests;
+
 	/// <summary>
-	/// Blake2 Digest Speed Tests
+	/// SHA2 Digest Speed Tests
 	/// </summary>
 	class DigestSpeedTest : public ITest
 	{
@@ -23,7 +25,6 @@ namespace TestSHA2
 		static constexpr uint64_t GB10 = GB1 * 10;
 		static constexpr uint64_t DEFITER = 10;
 
-		int m_testCycle;
 		TestEventHandler m_progressEvent;
 
 	public:
@@ -38,13 +39,9 @@ namespace TestSHA2
 		virtual TestEventHandler &Progress() { return m_progressEvent; }
 
 		/// <summary>
-		/// Test Blake2 for performance
+		/// Test SHA2 for performance
 		/// </summary>
-		///
-		/// <param name="TestCycle">The type of speed test to run; standard(0), long(1), or extended parallel degree (4 or greater, must be divisible by 4)</param>
-		DigestSpeedTest(int TestCycle = 0)
-			:
-			m_testCycle(TestCycle)
+		DigestSpeedTest()
 		{
 		}
 
@@ -55,49 +52,14 @@ namespace TestSHA2
 		{
 			try
 			{
-				if (m_testCycle == 0)
-				{
-					OnProgress("*** TEST PARAMETERS ***");
-					OnProgress("Measures performance using the Parallelized Tree Hashing configuration.");
-					OnProgress("Parallel Degree is set to the default of 4 threads.");
-					OnProgress("Speed is measured in MegaBytes (1,000,000 bytes) per Second, with a sample size of 1 GB.");
-					OnProgress("Block update sizes are fixed at 10MB * 100 iterations per 1GB loop cycle.");
-					OnProgress("10 * 1GB loops are run and added for the combined average over 10 GigaByte of data.");
-					OnProgress("");
-					OnProgress("### CEX C++ SHA2-256 Message Digest: 10 loops * 1000 MB ###");
-					SHA256Loop(GB1, 10, 4);
-					OnProgress("### CEX C++ SHA2-512 Message Digest: 10 loops * 1000 MB ###");
-					SHA512Loop(GB1, 10, 4);
-				}
-				else if (m_testCycle == 1)
-				{
-					OnProgress("*** TEST PARAMETERS ***");
-					OnProgress("Measures performance using the Parallelized Tree Hashing configuration.");
-					OnProgress("Parallel Degree is set to 8 threads.");
-					OnProgress("Speed is measured in MegaBytes (1,000,000 bytes) per Second, with a sample size of 1 GB.");
-					OnProgress("Block update sizes are fixed at 10MB * 100 iterations per 1GB loop cycle.");
-					OnProgress("10 * 1GB loops are run and added for the combined average over 10 GigaByte of data.");
-					OnProgress("");
-					OnProgress("### CEX C++ SHA2-256 Message Digest: 10 loops * 1000 MB ###");
-					SHA256Loop(GB1, 10, 8);
-					OnProgress("### CEX C++ SHA2-512 Message Digest: 10 loops * 1000 MB ###");
-					SHA512Loop(GB1, 10, 8);
-
-				}
-				else
-				{
-					OnProgress("*** TEST PARAMETERS ***");
-					OnProgress("Measures performance using the sequential mode standard configuration.");
-					OnProgress("Parallel Degree is set to 1 thread.");
-					OnProgress("Speed is measured in MegaBytes (1,000,000 bytes) per Second, with a sample size of 1 GB.");
-					OnProgress("Block update sizes are fixed at 10MB * 100 iterations per 1GB loop cycle.");
-					OnProgress("10 * 1GB loops are run and added for the combined average over 10 GigaByte of data.");
-					OnProgress("");
-					OnProgress("### CEX C++ SHA2-256 Message Digest: 10 loops * 1000 MB ###");
-					SHA256Loop(GB1, 10);
-					OnProgress("### CEX C++ SHA2-512 Message Digest: 10 loops * 1000 MB ###");
-					SHA512Loop(GB1, 10);
-				}
+				OnProgress("***The sequential SHA2 256 digest***");
+				DigestBlockLoop(Digests::SHA256, MB100, 10, false);
+				OnProgress("***The parallel Skein 256 digest***");
+				DigestBlockLoop(Digests::SHA256, MB100, 10, true);
+				OnProgress("***The sequential SHA2 512 digest***");
+				DigestBlockLoop(Digests::SHA512, MB100, 10, false);
+				OnProgress("***The parallel SHA2 512 digest***");
+				DigestBlockLoop(Digests::SHA512, MB100, 10, true);
 
 				return MESSAGE;
 			}
@@ -112,18 +74,10 @@ namespace TestSHA2
 		}
 
 	private:
-		void SHA256Loop(size_t SampleSize, size_t Loops = DEFITER, uint8_t Threads = 1);
-		void SHA512Loop(size_t SampleSize, size_t Loops = DEFITER, uint8_t Threads = 1);
+
+		void DigestSpeedTest::DigestBlockLoop(Digests DigestType, size_t SampleSize, size_t Loops, bool Parallel);
 		uint64_t GetBytesPerSecond(uint64_t DurationTicks, uint64_t DataSize);
 		void OnProgress(char* Data);
-
-		template<typename T>
-		static inline std::string IntToString(const T& Value)
-		{
-			std::ostringstream oss;
-			oss << Value;
-			return oss.str();
-		}
 	};
 }
 

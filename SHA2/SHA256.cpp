@@ -1,509 +1,308 @@
 #include "SHA256.h"
+#include "ArrayUtils.h"
 #include "CpuDetect.h"
 #include "IntUtils.h"
 #include "ParallelUtils.h"
 #include "SHA256Compress.h"
 
-namespace SHA2
+NAMESPACE_DIGEST
+
+using Common::CpuDetect;
+using Utility::IntUtils;
+using Utility::ParallelUtils;
+
+//~~~Constructor~~~//
+
+SHA256::SHA256(bool Parallel)
+	:
+	m_isDestroyed(false),
+	m_isInitialized(false),
+	m_msgBuffer(Parallel ? DEF_PRLDEGREE * BLOCK_SIZE : BLOCK_SIZE),
+	m_msgLength(0),
+	m_parallelProfile(BLOCK_SIZE, false, STATE_PRECACHED, false, DEF_PRLDEGREE),
+	m_dgtState(Parallel ? DEF_PRLDEGREE : 1)
 {
-	/*** Public Methods ***/
+	if (m_parallelProfile.IsParallel())
+		m_parallelProfile.IsParallel() = Parallel;
 
-	void SHA256::BlockUpdate(const std::vector<byte> &Input, size_t InOffset, size_t Length)
+	Initialize();
+}
+
+SHA256::~SHA256()
+{
+	Destroy();
+}
+
+//~~~Public Functions~~~//
+
+void SHA256::Compute(const std::vector<byte> &Input, std::vector<byte> &Output)
+{
+	Output.resize(DIGEST_SIZE);
+	Update(Input, 0, Input.size());
+	Finalize(Output, 0);
+	Reset();
+}
+
+void SHA256::Destroy()
+{
+	if (!m_isDestroyed)
 	{
-#if defined(_DEBUG)
-		assert(Input.size() - InOffset >= Length);
-#endif
-		if (Length == 0)
-			return;
-
-		if (m_isParallel)
-		{
-			size_t stateOffset = m_State.size() / m_treeParams.ParallelDegree();
-
-			if (m_msgLength != 0 && Length + m_msgLength >= m_msgBuffer.size())
-			{
-				// fill buffer
-				size_t rmd = m_msgBuffer.size() - m_msgLength;
-				if (rmd != 0)
-					memcpy(&m_msgBuffer[m_msgLength], &Input[InOffset], rmd);
-
-				// empty the message buffer
-				ParallelUtils::ParallelFor(0, m_treeParams.ParallelDegree(), [this, &Input, InOffset, stateOffset](size_t i)
-				{
-					ProcessBlock(m_msgBuffer, i * ITL_BLKSIZE, m_State, i * stateOffset);
-				});
-
-				m_msgLength = 0;
-				Length -= rmd;
-				InOffset += rmd;
-			}
-
-			if (Length >= m_minParallel)
-			{
-				// calculate working set size
-				size_t prcLen = Length - (Length % m_minParallel);
-
-				// process large blocks
-				ParallelUtils::ParallelFor(0, m_treeParams.ParallelDegree(), [this, &Input, InOffset, prcLen, stateOffset](size_t i)
-				{
-					ProcessLeaf(Input, InOffset + (i * ITL_BLKSIZE), m_State, i * stateOffset, prcLen);
-				});
-
-				Length -= prcLen;
-				InOffset += prcLen;
-			}
-		}
-		else
-		{
-			if (m_msgLength != 0 && m_msgLength + Length >= BLOCK_SIZE)
-			{
-				size_t rmd = BLOCK_SIZE - m_msgLength;
-				if (rmd != 0)
-					memcpy(&m_msgBuffer[m_msgLength], &Input[InOffset], rmd);
-
-				ProcessBlock(m_msgBuffer, 0, m_State, 0);
-				m_msgLength = 0;
-				InOffset += rmd;
-				Length -= rmd;
-			}
-
-			// loop until last block
-			while (Length > BLOCK_SIZE)
-			{
-				ProcessBlock(Input, InOffset, m_State, 0);
-				InOffset += BLOCK_SIZE;
-				Length -= BLOCK_SIZE;
-			}
-		}
-
-		// store unaligned bytes
-		if (Length != 0)
-		{
-			memcpy(&m_msgBuffer[m_msgLength], &Input[InOffset], Length);
-			m_msgLength += Length;
-		}
-	}
-
-	void SHA256::ComputeHash(const std::vector<byte> &Input, std::vector<byte> &Output)
-	{
-		if (Input.size() < m_minParallel)
-			m_isParallel = false;
-
-		Output.resize(DIGEST_SIZE);
-		BlockUpdate(Input, 0, Input.size());
-		DoFinal(Output, 0);
-	}
-
-	void SHA256::Destroy()
-	{
-		if (!m_isDestroyed)
-		{
-			m_isDestroyed = true;
-
-			for (size_t i = 0; i < m_State.size(); ++i)
-				m_State[i].Reset();
-
-			if (m_treeDestroy)
-				m_treeParams.Reset();
-
-			m_hasAvx = false;
-			m_isHmac = false;
-			m_isInitialized = false;
-			m_isParallel = false;
-			m_leafSize = 0;
-			m_minParallel = 0;
-			m_msgLength = 0;
-			m_parallelBlockSize = 0;
-			m_treeDestroy = false;
-
-			IntUtils::ClearVector(m_iPad);
-			IntUtils::ClearVector(m_oPad);
-			IntUtils::ClearVector(m_msgBuffer);
-			IntUtils::ClearVector(m_State);
-		}
-	}
-
-	size_t SHA256::DoFinal(std::vector<byte> &Output, const size_t OutOffset)
-	{
-#if defined(CPPEXCEPTIONS_ENABLED)
-		if (Output.size() - OutOffset < DigestSize())
-			throw CryptoDigestException("SHA256:DoFinal", "The Output buffer is too short!");
-#endif
-
-		// rtm: too small for parallel
-		if (!m_isHmac && m_isParallel && m_State[0].T == 0)
-		{
-			m_isParallel = false;
-			size_t len = m_msgLength;
-			m_msgLength = 0;
-			BlockUpdate(m_msgBuffer, 0, len);
-		}
-
-		if (m_isParallel && !m_isHmac)
-		{
-			std::vector<byte> leaf(BLOCK_SIZE);
-
-			//  depth 2: hash into intermediate branch states
-			if (m_treeParams.TreeDepth() == 2)
-			{
-				// create the temp state buffers
-				std::vector<SHA256State> branchState(m_State.size() / m_treeParams.SubTreeLength());
-				Initialize(branchState);
-
-				// compress the leaves into subtree state hashes
-				for (size_t i = 0, j = 0; i < m_State.size(); i += 2)
-				{
-					// no empty block processing
-					if (m_State[i].T != 0)
-					{
-						// copy state as input message block
-						memcpy(&leaf[0], &m_State[i].H[0], DIGEST_SIZE);
-						memcpy(&leaf[DIGEST_SIZE], &m_State[i + 1].H[0], DIGEST_SIZE);
-						SHA256Compress::Compress64(leaf, 0, branchState, j);
-
-						// finalize at subtree boundary
-						if (i != 0 && i % m_treeParams.SubTreeLength() == 0)
-						{
-							// increment node state counter
-							m_treeParams.NodeOffset() += 1;
-							memcpy(&leaf[0], &m_treeParams.ToBytes()[0], m_treeParams.GetHeaderSize());
-							// process the params as final state
-							HashFinal(leaf, 0, m_treeParams.GetHeaderSize(), branchState, j++);
-						}
-					}
-				}
-
-				// compress the subtree hashes into root hash
-				for (size_t i = 0; i < branchState.size(); i += 2)
-				{
-					if (branchState[i].T != 0)
-					{
-						// copy subtree hashes
-						memcpy(&leaf[0], &branchState[i].H[0], DIGEST_SIZE);
-						memcpy(&leaf[DIGEST_SIZE], &branchState[i + 1].H[0], DIGEST_SIZE);
-						// subtree branch hashes are compressed into root state
-						SHA256Compress::Compress64(leaf, 0, m_State, 0);
-					}
-				}
-			}
-			else
-			{
-				// depth 1: process state blocks as contiguous input
-				for (size_t i = 0; i < m_State.size(); i += 2)
-				{
-					// skip empty state
-					if (m_State[i].T != 0)
-					{
-						// copy hashes as input blocks
-						memcpy(&leaf[0], &m_State[i].H[0], DIGEST_SIZE);
-						memcpy(&leaf[DIGEST_SIZE], &m_State[i + 1].H[0], DIGEST_SIZE);
-						// compress into root state
-						SHA256Compress::Compress64(leaf, 0, m_State, 0);
-					}
-				}
-			}
-		}
-
-		// Note: I considered mac on each state in parallel mode, but I'm not sure I see the benefit.
-		// If mac is secure, once on last state should be enough(?) this may change at some point..
-		if (m_isHmac)
-			MacFinal(m_msgBuffer, m_msgLength, m_State, 0);
-		else
-			HashFinal(m_msgBuffer, 0, m_msgLength, m_State, 0);
-
-		StateToBytes(Output, OutOffset, m_State, 0);
-		Reset();
-
-		return DIGEST_SIZE;
-	}
-
-	size_t SHA256::Generate(MacParams &MacKey, std::vector<uint8_t> &Output)
-	{
-#if defined(_DEBUG)
-		assert(Output.size() != 0);
-		assert(Output.size() < 255 * DIGEST_SIZE);
-#endif
-#if defined(CPPEXCEPTIONS_ENABLED)
-		if (Output.size() > 255 * DIGEST_SIZE)
-			throw CryptoDigestException("SHA256:Generate", "Maximum output size is 255 times the digest return size!");
-#endif
-
-		size_t prcLen = DIGEST_SIZE;
-		std::vector<uint8_t> state(DIGEST_SIZE);
-		std::vector<byte> prk;
-
-		Extract(MacKey.Key(), MacKey.Salt(), prk);
-		LoadMacKey(MacParams(prk));
-		Expand(MacKey.Info(), 0, state);
-
-		if (prcLen < Output.size())
-		{
-			memcpy(&Output[0], &state[0], DIGEST_SIZE);
-			int32_t rmd = (int32_t)(Output.size() - prcLen);
-
-			while (rmd > 0)
-			{
-				Expand(MacKey.Info(), prcLen, state);
-
-				if (rmd > (int32_t)DIGEST_SIZE)
-				{
-					memcpy(&Output[prcLen], &state[0], DIGEST_SIZE);
-					prcLen += DIGEST_SIZE;
-					rmd -= (int32_t)DIGEST_SIZE;
-				}
-				else
-				{
-					rmd = (int32_t)(Output.size() - prcLen);
-					memcpy(&Output[prcLen], &state[0], rmd);
-					rmd = 0;
-				}
-			}
-		}
-		else
-		{
-			memcpy(&Output[0], &state[0], Output.size());
-		}
-
-		Reset();
-		m_isHmac = false;
-
-		return Output.size();
-	}
-
-	void SHA256::LoadMacKey(MacParams &MacKey)
-	{
-#if defined(_DEBUG)
-		assert(MacKey.Key().size() > 3);
-#endif
-#if defined(CPPEXCEPTIONS_ENABLED)
-		if (MacKey.Key().size() < 4)
-			throw CryptoDigestException("SHA256:LoadMacKey", "The minimum key size is 4 bytes, key length equal to digest output size is recommended!");
-#endif
-
-		m_isHmac = true;
-		m_treeParams.KeyLength() = MacKey.Key().size();
-		Reset();
-
-		size_t klen = MacKey.Key().size() + MacKey.Salt().size() + MacKey.Info().size();
-		std::vector<byte> key(klen, 0);
-		memcpy(&key[0], &MacKey.Key()[0], MacKey.Key().size());
-
-		if (MacKey.Salt().size() != 0)
-			memcpy(&key[MacKey.Key().size()], &MacKey.Salt()[0], MacKey.Salt().size());
-		if (MacKey.Info().size() != 0)
-			memcpy(&key[MacKey.Key().size() + MacKey.Salt().size()], &MacKey.Info()[0], MacKey.Info().size());
-
-		if (m_iPad.size() != BLOCK_SIZE)
-			m_iPad.resize(BLOCK_SIZE, 0x36);
-		else
-			memset(&m_iPad[0], (byte)0x36, m_iPad.size());
-
-		if (m_oPad.size() != BLOCK_SIZE)
-			m_oPad.resize(BLOCK_SIZE, 0x5C);
-		else
-			memset(&m_oPad[0], (byte)0x5C, m_oPad.size());
-
-		if (klen > BLOCK_SIZE)
-		{
-			BlockUpdate(key, 0, key.size());
-			key.resize(DIGEST_SIZE);
-			HashFinal(m_msgBuffer, 0, m_msgLength, m_State, 0);
-			StateToBytes(key, 0, m_State, 0);
-			Reset();
-		}
-
-		for (size_t i = 0; i < key.size(); ++i)
-			m_iPad[i] ^= key[i];
-		for (size_t i = 0; i < key.size(); ++i)
-			m_oPad[i] ^= key[i];
-
-		ResetMac();
-	}
-
-	void SHA256::Reset()
-	{
+		m_isDestroyed = true;
+		m_isInitialized = false;
 		m_msgLength = 0;
-		memset(&m_msgBuffer[0], 0, m_msgBuffer.size());
-		Initialize(m_State);
-	}
 
-	void SHA256::Update(byte Input)
-	{
-		std::vector<uint8_t> inp(1, Input);
-		BlockUpdate(inp, 0, 1);
-	}
-
-	/*** Private Methods ***/
-
-	void SHA256::DetectCpu()
-	{
-		CpuDetect detect;
-		m_hasAvx = detect.HasAVX();
-	}
-
-	void SHA256::Extract(const std::vector<byte> &Key, const std::vector<byte> &Salt, std::vector<byte> &Output)
-	{
-		if (Output.size() != DIGEST_SIZE)
-			Output.resize(DIGEST_SIZE);
-
-		LoadMacKey(MacParams(Key));
-
-		if (Salt.size() == 0)
+		try
 		{
-			std::vector<byte> zeros(DIGEST_SIZE, 0);
-			LoadMacKey(MacParams(zeros));
+			for (size_t i = 0; i < m_dgtState.size(); ++i)
+				m_dgtState[i].Reset();
+
+			Utility::ArrayUtils::ClearVector(m_msgBuffer);
+			Utility::ArrayUtils::ClearVector(m_dgtState);
 		}
-		else
+		catch (std::exception& ex)
 		{
-			LoadMacKey(MacParams(Salt));
+			throw CryptoDigestException("SHA256:Destroy", "Could not clear all variables!", std::string(ex.what()));
 		}
-
-		BlockUpdate(Key, 0, Key.size());
-		DoFinal(Output, 0);
-		ResetMac();
-	}
-
-	void SHA256::Expand(const std::vector<byte> &Input, size_t Count, std::vector<byte> &Output)
-	{
-		const size_t N = Count / DIGEST_SIZE + 1;
-
-		if (Count != 0)
-			BlockUpdate(Output, 0, DIGEST_SIZE);
-		if (Input.size() > 0)
-			BlockUpdate(Input, 0, Input.size());
-
-		Update((byte)N);
-		DoFinal(Output, 0);
-		ResetMac();
-	}
-
-	void SHA256::HashFinal(std::vector<byte> &Input, size_t InOffset, size_t Length, std::vector<SHA256State> &State, size_t StateOffset)
-	{
-		State[StateOffset].T += Length;
-		ulong bitLen = (State[StateOffset].T << 3);
-
-		if (Length == BLOCK_SIZE)
-		{
-			SHA256Compress::Compress64(Input, InOffset, State, StateOffset);
-			Length = 0;
-		}
-
-		Input[InOffset + Length] = (byte)128;
-		++Length;
-
-		// padding
-		if (Length < BLOCK_SIZE)
-			memset(&Input[InOffset + Length], 0, BLOCK_SIZE - Length);
-
-		if (Length > 56)
-		{
-			SHA256Compress::Compress64(Input, InOffset, State, StateOffset);
-			memset(&Input[InOffset], 0, BLOCK_SIZE);
-		}
-
-		// finalize state with counter and last compression
-		IntUtils::Be32ToBytes((uint)((uint64_t)bitLen >> 32), Input, InOffset + 56);
-		IntUtils::Be32ToBytes((uint)((uint64_t)bitLen), Input, InOffset + 60);
-		SHA256Compress::Compress64(Input, InOffset, State, StateOffset);
-	}
-
-	void SHA256::Initialize(std::vector<SHA256State> &State)
-	{
-		LoadState(State, 0);
-
-		if (State.size() > 1)
-		{
-			for (size_t i = 0; i < State.size(); ++i)
-			{
-				memcpy(&State[i].H[0], &State[0].H[0], State[0].H.size() * sizeof(uint));
-				State[i].T = 0;
-			}
-		}
-
-		m_isInitialized = true;
-	}
-
-	void SHA256::LoadState(std::vector<SHA256State> &State, size_t StateOffset)
-	{
-		State[StateOffset].T = 0;
-		State[StateOffset].H[0] = 0x6a09e667;
-		State[StateOffset].H[1] = 0xbb67ae85;
-		State[StateOffset].H[2] = 0x3c6ef372;
-		State[StateOffset].H[3] = 0xa54ff53a;
-		State[StateOffset].H[4] = 0x510e527f;
-		State[StateOffset].H[5] = 0x9b05688c;
-		State[StateOffset].H[6] = 0x1f83d9ab;
-		State[StateOffset].H[7] = 0x5be0cd19;
-	}
-
-	void SHA256::MacFinal(std::vector<byte> &Input, const size_t Length, std::vector<SHA256State> &State, size_t StateOffset)
-	{
-		HashFinal(Input, 0, Length, State, StateOffset);
-		StateToBytes(Input, 0, State, StateOffset);
-		LoadState(State, StateOffset);
-		SHA256Compress::Compress64(m_oPad, 0, State, StateOffset);
-		HashFinal(Input, 0, DIGEST_SIZE, State, StateOffset);
-	}
-
-	void SHA256::ProcessBlock(const std::vector<uint8_t> &Input, size_t InOffset, std::vector<SHA256State> &State, size_t StateOffset)
-	{
-		if (m_isParallel)
-		{
-			// using a depth > 0
-			if (m_hasAvx)
-			{
-				// 8 lanes
-				SHA256Compress::Compress512(Input, InOffset, State, StateOffset);
-			}
-			else
-			{
-				// keep to 8 lanes and reverse order for equivalent output
-				SHA256Compress::Compress64(Input, InOffset, State, StateOffset + 7);
-				SHA256Compress::Compress64(Input, InOffset + BLOCK_SIZE, State, StateOffset + 6);
-				SHA256Compress::Compress64(Input, InOffset + 2 * BLOCK_SIZE, State, StateOffset + 5);
-				SHA256Compress::Compress64(Input, InOffset + 3 * BLOCK_SIZE, State, StateOffset + 4);
-				SHA256Compress::Compress64(Input, InOffset + 4 * BLOCK_SIZE, State, StateOffset + 3);
-				SHA256Compress::Compress64(Input, InOffset + 5 * BLOCK_SIZE, State, StateOffset + 2);
-				SHA256Compress::Compress64(Input, InOffset + 6 * BLOCK_SIZE, State, StateOffset + 1);
-				SHA256Compress::Compress64(Input, InOffset + 7 * BLOCK_SIZE, State, StateOffset);
-			}
-		}
-		else
-		{
-			SHA256Compress::Compress64(Input, InOffset, State, StateOffset);
-		}
-	}
-
-	void SHA256::ProcessLeaf(const std::vector<uint8_t> &Input, size_t InOffset, std::vector<SHA256State> &State, size_t StateOffset, uint64_t Length)
-	{
-		do
-		{
-			ProcessBlock(Input, InOffset, State, StateOffset);
-			InOffset += m_minParallel;
-			Length -= m_minParallel;
-		} 
-		while (Length > 0);
-	}
-
-	void SHA256::ResetMac()
-	{
-		LoadState(m_State, 0);
-		SHA256Compress::Compress64(m_iPad, 0, m_State, 0);
-	}
-
-	void SHA256::StateToBytes(std::vector<byte> &Output, const size_t OutOffset, std::vector<SHA256State> &State, size_t StateOffset)
-	{
-#if defined(IS_BIG_ENDIAN)
-		memcpy(&Output[OutOffset], &State[StateOffset].H[0], State[StateOffset].H.size() * sizeof(uint));
-#else
-		IntUtils::Be32ToBytes(m_State[StateOffset].H[0], Output, OutOffset);
-		IntUtils::Be32ToBytes(m_State[StateOffset].H[1], Output, OutOffset + 4);
-		IntUtils::Be32ToBytes(m_State[StateOffset].H[2], Output, OutOffset + 8);
-		IntUtils::Be32ToBytes(m_State[StateOffset].H[3], Output, OutOffset + 12);
-		IntUtils::Be32ToBytes(m_State[StateOffset].H[4], Output, OutOffset + 16);
-		IntUtils::Be32ToBytes(m_State[StateOffset].H[5], Output, OutOffset + 20);
-		IntUtils::Be32ToBytes(m_State[StateOffset].H[6], Output, OutOffset + 24);
-		IntUtils::Be32ToBytes(m_State[StateOffset].H[7], Output, OutOffset + 28);
-#endif
 	}
 }
+
+size_t SHA256::Finalize(std::vector<byte> &Output, const size_t OutOffset)
+{
+	CEXASSERT(Output.size() - OutOffset >= DIGEST_SIZE, "The Output buffer is too short!");
+
+	if (m_parallelProfile.IsParallel())
+	{
+		// pad buffer with zeros
+		if (m_msgLength < m_msgBuffer.size())
+			memset(&m_msgBuffer[m_msgLength], (byte)0, m_msgBuffer.size() - m_msgLength);
+
+		// process buffer
+		if (m_msgLength != 0)
+		{
+			size_t blkCtr = 0;
+
+			while (m_msgLength != 0)
+			{
+				const size_t MSGRMD = (m_msgLength >= BLOCK_SIZE) ? BLOCK_SIZE : m_msgLength;
+				HashFinal(m_msgBuffer, blkCtr * BLOCK_SIZE, MSGRMD, m_dgtState[blkCtr]);
+				m_msgLength -= MSGRMD;
+				++blkCtr;
+			}
+		}
+
+		// initialize root state
+		SHA256State rootState;
+		LoadState(rootState);
+
+		// add state blocks as contiguous message input
+		for (size_t i = 0; i < m_dgtState.size(); ++i)
+		{
+			IntUtils::BeUL256ToBlock(m_dgtState[i].H, m_msgBuffer, i * BLOCK_SIZE);
+			m_msgLength += DIGEST_SIZE;
+		}
+
+		// finalize and store
+		HashFinal(m_msgBuffer, 0, m_msgLength, rootState);
+		IntUtils::BeUL256ToBlock(rootState.H, Output, OutOffset);
+	}
+	else
+	{
+		// finalize and store
+		HashFinal(m_msgBuffer, 0, m_msgLength, m_dgtState[0]);
+		IntUtils::BeUL256ToBlock(m_dgtState[0].H, Output, OutOffset);
+	}
+
+	return DIGEST_SIZE;
+}
+
+void SHA256::ParallelMaxDegree(size_t Degree)
+{
+	if (Degree == 0)
+		throw CryptoDigestException("SHA256:ParallelMaxDegree", "Parallel degree can not be zero!");
+	if (Degree > 254)
+		throw CryptoDigestException("SHA256:ParallelMaxDegree", "Parallel degree can not exceed 254!");
+	if (Degree % 2 != 0)
+		throw CryptoDigestException("SHA256:ParallelMaxDegree", "Parallel degree must be an even number!");
+
+	m_parallelProfile.SetMaxDegree(Degree);
+	m_dgtState.clear();
+	m_dgtState.resize(Degree);
+	m_msgBuffer.clear();
+	m_msgBuffer.resize(Degree * BLOCK_SIZE);
+
+	Reset();
+}
+
+void SHA256::Reset()
+{
+	m_msgLength = 0;
+	memset(&m_msgBuffer[0], 0, m_msgBuffer.size());
+
+	Initialize();
+}
+
+void SHA256::Update(byte Input)
+{
+	std::vector<byte> inp(1, Input);
+	Update(inp, 0, 1);
+}
+
+void SHA256::Update(const std::vector<byte> &Input, size_t InOffset, size_t Length)
+{
+	CEXASSERT(Input.size() - InOffset >= Length, "The Output buffer is too short!");
+
+	if (Length == 0)
+		return;
+
+	if (m_parallelProfile.IsParallel())
+	{
+		if (m_msgLength != 0 && Length + m_msgLength >= m_msgBuffer.size())
+		{
+			// fill buffer
+			const size_t BUFRMD = m_msgBuffer.size() - m_msgLength;
+			if (BUFRMD != 0)
+				memcpy(&m_msgBuffer[m_msgLength], &Input[InOffset], BUFRMD);
+
+			// empty the message buffer
+			ParallelUtils::ParallelFor(0, m_parallelProfile.ParallelMaxDegree(), [this, &Input, InOffset](size_t i)
+			{
+				Compress(m_msgBuffer, i * BLOCK_SIZE, m_dgtState[i]);
+			});
+
+			m_msgLength = 0;
+			Length -= BUFRMD;
+			InOffset += BUFRMD;
+		}
+
+		if (Length >= m_parallelProfile.ParallelBlockSize())
+		{
+			// calculate working set size
+			const size_t PRCLEN = Length - (Length % m_parallelProfile.ParallelBlockSize());
+
+			// process large blocks
+			ParallelUtils::ParallelFor(0, m_parallelProfile.ParallelMaxDegree(), [this, &Input, InOffset, PRCLEN](size_t i)
+			{
+				ProcessLeaf(Input, InOffset + (i * BLOCK_SIZE), m_dgtState[i], PRCLEN);
+			});
+
+			Length -= PRCLEN;
+			InOffset += PRCLEN;
+		}
+
+		if (Length >= m_parallelProfile.ParallelMinimumSize())
+		{
+			const size_t PRMLEN = Length - (Length % m_parallelProfile.ParallelMinimumSize());
+
+			Utility::ParallelUtils::ParallelFor(0, m_parallelProfile.ParallelMaxDegree(), [this, &Input, InOffset, PRMLEN](size_t i)
+			{
+				ProcessLeaf(Input, InOffset + (i * BLOCK_SIZE), m_dgtState[i], PRMLEN);
+			});
+
+			Length -= PRMLEN;
+			InOffset += PRMLEN;
+		}
+	}
+	else
+	{
+		if (m_msgLength != 0 && (m_msgLength + Length >= BLOCK_SIZE))
+		{
+			size_t rmd = BLOCK_SIZE - m_msgLength;
+			if (rmd != 0)
+				memcpy(&m_msgBuffer[m_msgLength], &Input[InOffset], rmd);
+
+			Compress(m_msgBuffer, 0, m_dgtState[0]);
+			m_msgLength = 0;
+			InOffset += rmd;
+			Length -= rmd;
+		}
+
+		// sequential loop through blocks
+		while (Length > BLOCK_SIZE)
+		{
+			Compress(Input, InOffset, m_dgtState[0]);
+			InOffset += BLOCK_SIZE;
+			Length -= BLOCK_SIZE;
+		}
+	}
+
+	// store unaligned bytes
+	if (Length != 0)
+	{
+		memcpy(&m_msgBuffer[m_msgLength], &Input[InOffset], Length);
+		m_msgLength += Length;
+	}
+}
+
+//~~~Private Functions~~~//
+
+void SHA256::HashFinal(std::vector<byte> &Input, size_t InOffset, size_t Length, SHA256State &State)
+{
+	State.T += Length;
+	ulong bitLen = (State.T << 3);
+
+	if (Length == BLOCK_SIZE)
+	{
+		SHA256Compress::Compress64(Input, InOffset, State);
+		Length = 0;
+	}
+
+	Input[InOffset + Length] = (byte)128;
+	++Length;
+
+	// padding
+	if (Length < BLOCK_SIZE)
+		memset(&Input[InOffset + Length], 0, BLOCK_SIZE - Length);
+
+	if (Length > 56)
+	{
+		SHA256Compress::Compress64(Input, InOffset, State);
+		memset(&Input[InOffset], 0, BLOCK_SIZE);
+	}
+
+	// finalize state with counter and last compression
+	IntUtils::Be32ToBytes((uint)((ulong)bitLen >> 32), Input, InOffset + 56);
+	IntUtils::Be32ToBytes((uint)((ulong)bitLen), Input, InOffset + 60);
+	SHA256Compress::Compress64(Input, InOffset, State);
+}
+
+void SHA256::Initialize()
+{
+	for (size_t i = 0; i < m_dgtState.size(); ++i)
+		LoadState(m_dgtState[i]);
+
+	m_isInitialized = true;
+}
+
+void SHA256::LoadState(SHA256State &State)
+{
+	State.T = 0;
+	State.H[0] = 0x6a09e667;
+	State.H[1] = 0xbb67ae85;
+	State.H[2] = 0x3c6ef372;
+	State.H[3] = 0xa54ff53a;
+	State.H[4] = 0x510e527f;
+	State.H[5] = 0x9b05688c;
+	State.H[6] = 0x1f83d9ab;
+	State.H[7] = 0x5be0cd19;
+}
+
+void SHA256::Compress(const std::vector<byte> &Input, size_t InOffset, SHA256State &State)
+{
+	if (m_parallelProfile.HasSHA2())
+		SHA256Compress::Compress64W(Input, InOffset, State);
+	else
+		SHA256Compress::Compress64(Input, InOffset, State);
+}
+
+void SHA256::ProcessLeaf(const std::vector<byte> &Input, size_t InOffset, SHA256State &State, ulong Length)
+{
+	do
+	{
+		Compress(Input, InOffset, State);
+		InOffset += m_parallelProfile.ParallelMinimumSize();
+		Length -= m_parallelProfile.ParallelMinimumSize();
+	} 
+	while (Length > 0);
+}
+
+NAMESPACE_DIGESTEND

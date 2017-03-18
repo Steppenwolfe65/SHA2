@@ -6,6 +6,8 @@
 
 namespace TestSHA2
 {
+	using CEX::Digest::IDigest;
+
 	/// <summary>
 	/// Tests the SHA-2 digest implementation using vector comparisons.
 	/// <para>Using vectors from NIST SHA2 Documentation:
@@ -62,11 +64,8 @@ namespace TestSHA2
 		virtual std::string Run();
 
 	private:
-		void CompareHkdf(int Size, std::vector<byte> &Salt, std::vector<byte> &Key, std::vector<byte> &Info, std::vector<byte> &Output);
-		void CompareIntrinsics();
-		void CompareMac256(std::vector<byte> &Key, std::vector<byte> &Input, std::vector<byte> &Expected);
-		void CompareMac512(std::vector<byte> &Key, std::vector<byte> &Input, std::vector<byte> &Expected);
-		void CompareSHA(SHA2::IDigest *Digest, std::vector<byte> Input, std::vector<byte> Expected);
+		void CompareParallel(IDigest* Dgt1, IDigest* Dgt2);
+		void CompareVector(IDigest *Digest, std::vector<byte> Input, std::vector<byte> Expected);
 		void Initialize();
 		void OnProgress(char* Data);
 	};

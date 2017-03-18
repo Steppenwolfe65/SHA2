@@ -31,7 +31,7 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -83,15 +83,21 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <OpenMPSupport>true</OpenMPSupport>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -107,7 +113,7 @@
       <SDLCheck>false</SDLCheck>
       <DebugInformationFormat>None</DebugInformationFormat>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <OpenMPSupport>true</OpenMPSupport>
@@ -118,26 +124,40 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\SHA2\Common.h" />
-    <ClInclude Include="..\..\SHA2\Config.h" />
+    <ClInclude Include="..\..\SHA2\ArrayUtils.h" />
+    <ClInclude Include="..\..\SHA2\BitConverter.h" />
+    <ClInclude Include="..\..\SHA2\CexConfig.h" />
+    <ClInclude Include="..\..\SHA2\CexDomain.h" />
     <ClInclude Include="..\..\SHA2\CpuDetect.h" />
     <ClInclude Include="..\..\SHA2\CryptoDigestException.h" />
+    <ClInclude Include="..\..\SHA2\CryptoProcessingException.h" />
+    <ClInclude Include="..\..\SHA2\CryptoRandomException.h" />
+    <ClInclude Include="..\..\SHA2\CSP.h" />
+    <ClInclude Include="..\..\SHA2\DigestFromName.h" />
     <ClInclude Include="..\..\SHA2\Digests.h" />
     <ClInclude Include="..\..\SHA2\IDigest.h" />
     <ClInclude Include="..\..\SHA2\Intrinsics.h" />
     <ClInclude Include="..\..\SHA2\IntUtils.h" />
-    <ClInclude Include="..\..\SHA2\MacParams.h" />
+    <ClInclude Include="..\..\SHA2\ParallelOptions.h" />
     <ClInclude Include="..\..\SHA2\ParallelUtils.h" />
+    <ClInclude Include="..\..\SHA2\Providers.h" />
+    <ClInclude Include="..\..\SHA2\SecureRandom.h" />
     <ClInclude Include="..\..\SHA2\SHA256.h" />
     <ClInclude Include="..\..\SHA2\SHA256Compress.h" />
-    <ClInclude Include="..\..\SHA2\SHA2Params.h" />
     <ClInclude Include="..\..\SHA2\SHA512.h" />
     <ClInclude Include="..\..\SHA2\SHA512Compress.h" />
-    <ClInclude Include="..\..\SHA2\UInt128.h" />
-    <ClInclude Include="..\..\SHA2\UInt256.h" />
-    <ClInclude Include="..\..\SHA2\ULong256.h" />
+    <ClInclude Include="..\..\SHA2\SimdProfiles.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\SHA2\ArrayUtils.cpp" />
+    <ClCompile Include="..\..\SHA2\BitConverter.cpp" />
+    <ClCompile Include="..\..\SHA2\CpuDetect.cpp" />
+    <ClCompile Include="..\..\SHA2\CSP.cpp" />
+    <ClCompile Include="..\..\SHA2\DigestFromName.cpp" />
+    <ClCompile Include="..\..\SHA2\IntUtils.cpp" />
+    <ClCompile Include="..\..\SHA2\ParallelOptions.cpp" />
+    <ClCompile Include="..\..\SHA2\ParallelUtils.cpp" />
+    <ClCompile Include="..\..\SHA2\SecureRandom.cpp" />
     <ClCompile Include="..\..\SHA2\SHA256.cpp" />
     <ClCompile Include="..\..\SHA2\SHA512.cpp" />
   </ItemGroup>
