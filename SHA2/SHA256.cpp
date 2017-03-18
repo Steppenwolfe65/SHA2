@@ -40,7 +40,6 @@ void SHA256::Compute(const std::vector<byte> &Input, std::vector<byte> &Output)
 	Output.resize(DIGEST_SIZE);
 	Update(Input, 0, Input.size());
 	Finalize(Output, 0);
-	Reset();
 }
 
 void SHA256::Destroy()
@@ -111,6 +110,8 @@ size_t SHA256::Finalize(std::vector<byte> &Output, const size_t OutOffset)
 		HashFinal(m_msgBuffer, 0, m_msgLength, m_dgtState[0]);
 		IntUtils::BeUL256ToBlock(m_dgtState[0].H, Output, OutOffset);
 	}
+
+	Reset();
 
 	return DIGEST_SIZE;
 }

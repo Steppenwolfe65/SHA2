@@ -39,7 +39,6 @@ void SHA512::Compute(const std::vector<byte> &Input, std::vector<byte> &Output)
 	Output.resize(DIGEST_SIZE);
 	Update(Input, 0, Input.size());
 	Finalize(Output, 0);
-	Reset();
 }
 
 void SHA512::Destroy()
@@ -110,6 +109,8 @@ size_t SHA512::Finalize(std::vector<byte> &Output, const size_t OutOffset)
 		HashFinal(m_msgBuffer, 0, m_msgLength, m_dgtState[0]);
 		IntUtils::BeULL512ToBlock(m_dgtState[0].H, Output, OutOffset);
 	}
+
+	Reset();
 
 	return DIGEST_SIZE;
 }

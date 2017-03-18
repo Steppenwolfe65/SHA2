@@ -81,12 +81,10 @@ namespace TestSHA2
 
 			Dgt1->Update(input, 0, input.size());
 			Dgt1->Finalize(hash1, 0);
-			Dgt1->Reset();
 
 			// this will run in parallel
 			Dgt2->Update(input, 0, input.size());
 			Dgt2->Finalize(hash2, 0);
-			Dgt2->Reset();
 
 			if (hash1 != hash2)
 				throw std::exception("SKein Vector: Expected hash is not equal!");
@@ -110,7 +108,6 @@ namespace TestSHA2
 
 		Digest->Update(Input, 0, Input.size());
 		Digest->Finalize(hash, 0);
-		Digest->Reset();
 
 		if (Expected != hash)
 			throw std::string("SHA2: Expected hash is not equal!");
