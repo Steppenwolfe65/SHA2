@@ -144,6 +144,7 @@
     <ClInclude Include="..\..\SHA2\SecureRandom.h" />
     <ClInclude Include="..\..\SHA2\SHA256.h" />
     <ClInclude Include="..\..\SHA2\SHA256Compress.h" />
+    <ClInclude Include="..\..\SHA2\SHA2Params.h" />
     <ClInclude Include="..\..\SHA2\SHA512.h" />
     <ClInclude Include="..\..\SHA2\SHA512Compress.h" />
     <ClInclude Include="..\..\SHA2\SimdProfiles.h" />

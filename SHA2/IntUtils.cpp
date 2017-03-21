@@ -1,7 +1,5 @@
 #include "IntUtils.h"
-#if defined(CEX_HAS_MINSSE)
-#	include "Intrinsics.h"
-#endif
+#include "Intrinsics.h"
 
 NAMESPACE_UTILITY
 

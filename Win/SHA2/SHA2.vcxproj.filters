@@ -135,6 +135,9 @@
     <ClInclude Include="..\..\SHA2\SHA512.h">
       <Filter>Header Files\Digest</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\SHA2\SHA2Params.h">
+      <Filter>Header Files\Digest\Support</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\SHA2\CpuDetect.cpp">
