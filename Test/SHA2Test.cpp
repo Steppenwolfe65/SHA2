@@ -6,14 +6,16 @@
 
 namespace TestSHA2
 {
-	using CEX::Digest::SHA256;
-	using CEX::Digest::SHA512;
+	using namespace CEX::Digest;
 
 	std::string SHA2Test::Run()
 	{
 		try
 		{
 			Initialize();
+
+			TreeParamsTest();
+			OnProgress("Passed SHA2Params parameter serialization test..");
 
 			SHA256* sha256 = new SHA256();
 			CompareVector(sha256, m_shaMessage[0], m_shaExpected256[0]);
@@ -237,5 +239,26 @@ namespace TestSHA2
 	void SHA2Test::OnProgress(char* Data)
 	{
 		m_progressEvent(Data);
+	}
+
+	void SHA2Test::TreeParamsTest()
+	{
+		std::vector<byte> code1(8, 7);
+
+		SHA2Params tree1(32, 32, 8);
+		tree1.DistributionCode() = code1;
+		std::vector<uint8_t> tres = tree1.ToBytes();
+		SHA2Params tree2(tres);
+
+		if (!tree1.Equals(tree2))
+			throw std::string("SHA2Test: Tree parameters test failed!");
+
+		std::vector<byte> code2(20, 7);
+		SHA2Params tree3(0, 64, 1, 128, 8, 1, code2);
+		tres = tree3.ToBytes();
+		SHA2Params tree4(tres);
+
+		if (!tree3.Equals(tree4))
+			throw std::string("SHA2Test: Tree parameters test failed!");
 	}
 }
