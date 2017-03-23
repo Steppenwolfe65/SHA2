@@ -140,7 +140,7 @@ public:
 	/// <summary>
 	/// Initialize the SHA2Params structure using a serialized byte array
 	/// </summary>
-	explicit SHA2Params(std::vector<byte> &TreeArray)
+	explicit SHA2Params(const std::vector<byte> &TreeArray)
 		:
 		m_nodeOffset(0),
 		m_treeVersion(0),
