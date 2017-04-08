@@ -4,7 +4,7 @@
 #include "../SHA2/DigestFromName.h"
 #include "../SHA2/IntUtils.h"
 
-namespace TestSHA2
+namespace Test
 {
 	using CEX::Digest::IDigest;
 	using CEX::Utility::IntUtils;

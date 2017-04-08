@@ -1,10 +1,11 @@
-#ifndef _SHA2TEST_ITEST_H
-#define _SHA2TEST_ITEST_H
+#ifndef _CEXTEST_ITEST_H
+#define _CEXTEST_ITEST_H
 
 #include "TestCommon.h"
 #include "TestEventHandler.h"
+#include "../SHA2/CexDomain.h"
 
-namespace TestSHA2
+namespace Test
 {
 	/// <summary>
 	/// Test Interface

@@ -130,6 +130,7 @@
     <ClInclude Include="..\..\SHA2\CexDomain.h" />
     <ClInclude Include="..\..\SHA2\CpuDetect.h" />
     <ClInclude Include="..\..\SHA2\CryptoDigestException.h" />
+    <ClInclude Include="..\..\SHA2\CryptoException.h" />
     <ClInclude Include="..\..\SHA2\CryptoProcessingException.h" />
     <ClInclude Include="..\..\SHA2\CryptoRandomException.h" />
     <ClInclude Include="..\..\SHA2\CSP.h" />

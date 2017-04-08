@@ -4,7 +4,7 @@
 #include "ITest.h"
 #include "../SHA2/Digests.h"
 
-namespace TestSHA2
+namespace Test
 {
 	using CEX::Enumeration::Digests;
 

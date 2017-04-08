@@ -1,39 +1,31 @@
-#ifndef _SHA2TEST_BLAKETEST_H
-#define _SHA2TEST_BLAKETEST_H
+#ifndef _CEXTEST_SHA2TEST_H
+#define _CEXTEST_SHA2TEST_H
 
 #include "ITest.h"
 #include "../SHA2/IDigest.h"
 
-namespace TestSHA2
+namespace Test
 {
-	using CEX::Digest::IDigest;
+	using namespace CEX::Digest;
 
-	/// <summary>
-	/// Tests the SHA-2 digest implementation using vector comparisons.
+    /// <summary>
+    /// Tests the SHA-2 digest implementation using vector comparisons.
 	/// <para>Using vectors from NIST SHA2 Documentation:
-	/// <para><see href="http://csrc.nist.gov/groups/ST/toolkit/documents/Examples/SHA_All.pdf"/></para>
-	/// </summary>
-	class SHA2Test : public ITest
-	{
-	private:
-		const std::string DESCRIPTION = "Tests SHA-2 256/512 with NIST KAT vectors.";
-		const std::string FAILURE = "FAILURE! ";
-		const std::string SUCCESS = "SUCCESS! All SHA-2 tests have executed succesfully.";
+    /// <para><see href="http://csrc.nist.gov/groups/ST/toolkit/documents/Examples/SHA_All.pdf"/></para>
+    /// </summary>
+    class SHA2Test : public ITest
+    {
+    private:
+		static const std::string DESCRIPTION;
+		static const std::string FAILURE;
+		static const std::string SUCCESS;
 
-		std::vector<std::vector<byte>> m_shaExpected256;
-		std::vector<std::vector<byte>> m_shaExpected512;
-		std::vector<std::vector<byte>> m_shaMessage;
-		std::vector<std::vector<byte>> m_mac256;
-		std::vector<std::vector<byte>> m_mac512;
-		std::vector<std::vector<byte>> m_macKeys;
-		std::vector<std::vector<byte>> m_macInput;
-		std::vector<std::vector<byte>> m_hkdfIkm;
-		std::vector<std::vector<byte>> m_hkdfInfo;
-		std::vector<std::vector<byte>> m_hkdfOutput;
-		std::vector<std::vector<byte>> m_hkdfSalt;
+		std::vector<std::vector<byte>> m_expected256;
+		std::vector<std::vector<byte>> m_expected512;
+		std::vector<std::vector<byte>> m_message;
 		TestEventHandler m_progressEvent;
 
-	public:
+    public:
 		/// <summary>
 		/// Get: The test description
 		/// </summary>
@@ -47,28 +39,25 @@ namespace TestSHA2
 		/// <summary>
 		/// Known answer tests using the NIST SHA-2 KAT vectors
 		/// </summary>
-		SHA2Test()
-		{
-		}
+		SHA2Test();
 
 		/// <summary>
 		/// Destructor
 		/// </summary>
-		~SHA2Test()
-		{
-		}
+		~SHA2Test();
 
 		/// <summary>
 		/// Start the tests
 		/// </summary>
 		virtual std::string Run();
-
-	private:
-		void CompareParallel(IDigest* Dgt1, IDigest* Dgt2);
-		void CompareVector(IDigest *Digest, std::vector<byte> Input, std::vector<byte> Expected);
+        
+    private:
+		void CompareVector(IDigest *Digest, std::vector<byte> &Input, std::vector<byte> &Expected);
 		void Initialize();
-		void OnProgress(char* Data);
+		void OnProgress(std::string Data);
 		void TreeParamsTest();
-	};
+    };
 }
+
 #endif
+

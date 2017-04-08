@@ -11,7 +11,7 @@
 #	include <thread>
 #endif
 
-namespace TestSHA2
+namespace Test
 {
 	/// <summary>
 	/// A random generator

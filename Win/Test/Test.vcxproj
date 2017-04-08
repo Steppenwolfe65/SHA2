@@ -170,9 +170,12 @@
     <ClInclude Include="..\..\Test\TestUtils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Test\ConsoleUtils.cpp" />
+    <ClCompile Include="..\..\Test\HexConverter.cpp" />
     <ClCompile Include="..\..\Test\SHA2Test.cpp" />
     <ClCompile Include="..\..\Test\DigestSpeedTest.cpp" />
     <ClCompile Include="..\..\Test\Test.cpp" />
+    <ClCompile Include="..\..\Test\TestUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SHA2\SHA2.vcxproj">

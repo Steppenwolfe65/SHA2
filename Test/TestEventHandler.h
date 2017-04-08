@@ -1,17 +1,18 @@
-#ifndef _SHA2TEST_TESTEVENTHANDLER_H
-#define _SHA2TEST_TESTEVENTHANDLER_H
+#ifndef _CEXTEST_TESTEVENTHANDLER_H
+#define _CEXTEST_TESTEVENTHANDLER_H
 
 #include "TestEvent.h"
 #include "ConsoleUtils.h"
+#include <string>
 
-namespace TestSHA2
+namespace Test
 {
 	class TestEventHandler : public TestEvent<TestEventHandler>
 	{
 	public:
-		void operator()(const char* Data)
+		void operator()(const std::string Data)
 		{
-			ConsoleUtils::WriteLine(std::string(Data));
+			ConsoleUtils::WriteLine(Data);
 		}
 	};
 }

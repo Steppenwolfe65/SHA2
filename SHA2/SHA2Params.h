@@ -37,7 +37,8 @@ using Utility::IntUtils;
 struct SHA2Params
 {
 private:
-	static constexpr size_t HDR_SIZE = 24;
+
+	static const size_t HDR_SIZE = 24;
 
 	// offset | size | type
 	// 0		4		Node relational offset
@@ -205,7 +206,7 @@ public:
 
 	/// <summary>
 	/// Create a deep copy of this structure.
-	/// <para>Caller must delete this object.</pare>
+	/// <para>Caller must delete this object.</para>
 	/// </summary>
 	/// 
 	/// <returns>A pointer to a copy of this SHA2Params structure</returns>
